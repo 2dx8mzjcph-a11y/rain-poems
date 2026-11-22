@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>مشي تحت المطر - قصائد</title>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      height: 100vh;
+      overflow: hidden;
+      background: linear-gradient(180deg, #0f1722 0%, #1c2838 48%, #2b3a4a 100%);
+      font-family: "Amiri", serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    /* غيوم متحركة في السماء */
+    .clouds {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 200%;
+      height: 45%;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.45;
+      background:
+        radial-gradient(ellipse at 15% 25%, #516175 0%, transparent 55%),
+        radial-gradient(ellipse at 45% 18%, #3c4b5e 0%, transparent 60%),
+        radial-gradient(ellipse at 75% 28%, #5b6c80 0%, transparent 50%),
+        radial-gradient(ellipse at 92% 15%, #374557 0%, transparent 55%);
+      animation: moveClouds 45s linear infinite;
+    }
+
+    @keyframes moveClouds {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    /* لوحة المطر */
+    #rainCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    /* شريط التحكم العلوي */
+    .top-bar {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      font-family: "Cairo", sans-serif;
+    }
+
+    .btn {
+      background: rgba(255, 255, 255, 0.1);
+      color: #e2e8f0;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-family: "Cairo", sans-serif;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .btn:active {
+      transform: scale(0.95);
+    }
+
+    .btn.active {
+      background: rgba(255, 209, 102, 0.22);
+      border-color: #ffd166;
+      color: #ffd166;
+    }
+
+    /* صندوق عرض القصيدة */
+    .poem-container {
+      position: relative;
+      z-index: 8;
+      margin: 10px auto 0;
+      width: min(90%, 620px);
+      background: rgba(13, 19, 28, 0.68);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      padding: 22px 26px;
+      text-align: center;
+      color: #f8fafc;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .poem-container.fade {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    .poem-title {
+      font-family: "Cairo", sans-serif;
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 10px;
+      letter-spacing: 0.5px;
+    }
+
+    .poem-lines {
+      font-size: clamp(21px, 3.6vw, 29px);
+      line-height: 1.85;
+      color: #f1f5f9;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+      white-space: pre-line;
+    }
+
+    /* مسرح الشخصية والأرضية */
+    .stage {
+      position: relative;
+      z-index: 5;
+      width: 100%;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* الشخصية التي تمشي */
+    #walker {
+      position: absolute;
+      bottom: 92px;
+      left: 15%;
+      width: 74px;
+      height: 132px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform 0.25s ease;
+    }
+
+    #walker.flip {
+      transform: scaleX(-1);
+    }
+
+    .body-bob {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: bobWalk 0.65s ease-in-out infinite;
+    }
+
+    #walker.paused .body-bob,
+    #walker.paused .leg-left,
+    #walker.paused .leg-right,
+    #walker.paused .arm-left,
+    #walker.paused .arm-right {
+      animation-play-state: paused;
+    }
+
+    @keyframes bobWalk {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-4px); }
+    }
+
+    /* مظلة فوق الشخصية */
+    .umbrella {
+      width: 88px;
+      height: 26px;
+      background: #1e293b;
+      border-top: 3px solid #64748b;
+      border-radius: 50px 50px 6px 6px;
+      position: relative;
+      margin-bottom: -4px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+    }
+
+    .umbrella-stick {
+      width: 3px;
+      height: 34px;
+      background: #94a3b8;
+    }
+
+    .head {
+      width: 24px;
+      height: 24px;
+      background: #e2b49a;
+      border-radius: 50%;
+      margin-top: -14px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .coat {
+      width: 34px;
+      height: 46px;
+      background: #27374d;
+      border-radius: 12px 12px 6px 6px;
+      margin-top: 2px;
+      position: relative;
+      border: 1px solid #526d82;
+    }
+
+    .legs {
+      position: relative;
+      width: 28px;
+      height: 36px;
+    }
+
+    .leg {
+      position: absolute;
+      top: 0;
+      width: 8px;
+      height: 34px;
+      background: #111827;
+      border-radius: 4px;
+      transform-origin: top center;
+    }
+
+    .leg-left {
+      left: 5px;
+      animation: swingLeft 0.65s ease-in-out infinite;
+    }
+
+    .leg-right {
+      right: 5px;
+      animation: swingRight 0.65s ease-in-out infinite;
+    }
+
+    @keyframes swingLeft {
+      0%, 100% { transform: rotate(22deg); }
+      50% { transform: rotate(-22deg); }
+    }
+
+    @keyframes swingRight {
+      0%, 100% { transform: rotate(-22deg); }
+      50% { transform: rotate(22deg); }
+    }
+
+    /* الأرضية المبللة بالمطر */
+    .ground {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 95px;
+      background: linear-gradient(180deg, #1b2631 0%, #0d131a 100%);
+      border-top: 3px solid #334155;
+      box-shadow: inset 0 8px 20px rgba(148, 163, 184, 0.12);
+    }
+
+    .hint {
+      position: fixed;
+      bottom: 14px;
+      width: 100%;
+      text-align: center;
+      color: #94a3b8;
+      font-family: "Cairo", sans-serif;
+      font-size: 13px;
+      z-index: 10;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="clouds"></div>
+  <canvas id="rainCanvas"></canvas>
+
+  <div class="top-bar">
+    <button id="musicBtn" class="btn">تشغيل الموسيقى الدرامية 🎵</button>
+    <button id="nextPoemBtn" class="btn">المقطع التالي ⟵</button>
+  </div>
+
+  <div id="poemBox" class="poem-container">
+    <div id="poemTitle" class="poem-title">من قصيدة: للعيد أبو هلالين</div>
+    <div id="poemLines" class="poem-lines">بعدها امحبتج خضره
+ذبل عمري ولا ذبلت
+يجمره وشابكه اعله الروح
+لا تبرد ... ولا تهفت</div>
+  </div>
+
+  <div class="stage">
+    <div id="walker" title="اضغط لتغيير البيت الشعري">
+      <div class="body-bob">
+        <div class="umbrella"></div>
+        <div class="umbrella-stick"></div>
+        <div class="head"></div>
+        <div class="coat"></div>
+      </div>
+      <div class="legs">
+        <div class="leg leg-left"></div>
+        <div class="leg leg-right"></div>
+      </div>
+    </div>
+    <div class="ground"></div>
+  </div>
+
+  <div class="hint">اضغط على الشخصية أو الشاشة لتغيير الأبيات • زر الموسيقى بالأعلى لتشغيل اللحن الحزين</div>
+
+  <script>
+    /* 1. مقاطع القصائد المأخوذة من الصفحات المرفقة */
+    const poems = [
+      {
+        title: "من قصيدة: للعيد أبو هلالين",
+        text: "بعدها امحبتج خضره\nذبل عمري ولا ذبلت\nيجمره وشابكه اعله الروح\nلا تبرد ... ولا تهفت"
+      },
+      {
+        title: "من قصيدة: للعيد أبو هلالين",
+        text: "يبعيده الشراع الضاع\nبيه ريح الهجر عصفت"
+      },
+      {
+        title: "من قصيدة: هواجس ليليه",
+        text: "آنه شبيدي .. آنه شبيدي\nيها ........ يالرايحه امن ايدي\nيماي وطاح مني ابكاع عطشانه\nوبكه ايلالي العطش بيدي"
+      },
+      {
+        title: "من قصيدة: هواجس ليليه",
+        text: "يصيده وعالجرف ضاعت\nاكل عمري البحر لمن وصلتلهه\nورجع يبجي الشبح بيدي\nوبكه ايلوح الحزن بيدي"
+      },
+      {
+        title: "من قصيدة: ربيع اذار",
+        text: "غني .... ديرتنه ابربيع اذار\nمر بيه الحام\nغني .... غني\nغني كل فرحه زمانك\nللفرح .... للناس .... للحب\nللنخيل الدوم فاتح كلبه لطيور السلام"
+      },
+      {
+        title: "من قصيدة: ربيع اذار",
+        text: "غني .... للنسمات .... للكاع الحبيبه\nواظفر اخيوط الشمس ....\nاظفر اخيوط الشمس لجبالنه الحلوه كصيبه"
+      }
+    ];
+
+    let currentPoem = 0;
+    const poemBox = document.getElementById("poemBox");
+    const poemTitle = document.getElementById("poemTitle");
+    const poemLines = document.getElementById("poemLines");
+    const nextPoemBtn = document.getElementById("nextPoemBtn");
+    const walker = document.getElementById("walker");
+
+    function showNextPoem() {
+      poemBox.classList.add("fade");
+      setTimeout(() => {
+        currentPoem = (currentPoem + 1) % poems.length;
+        poemTitle.textContent = poems[currentPoem].title;
+        poemLines.textContent = poems[currentPoem].text;
+        poemBox.classList.remove("fade");
+      }, 350);
+    }
+
+    nextPoemBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      showNextPoem();
+      startMusicIfNeeded();
+    });
+
+    walker.addEventListener("click", (e) => {
+      e.stopPropagation();
+      showNextPoem();
+      startMusicIfNeeded();
+    });
+
+    // تبديل تلقائي للأبيات كل 9 ثوانٍ
+    setInterval(showNextPoem, 9000);
+
+    /* 2. حركة مشي الشخصية ذهاباً وإياباً */
+    let posX = 40;
+    let direction = 1; // 1 لليمين، -1 لليسار
+    const speed = 1.25;
+
+    function animateWalker() {
+      const maxWidth = window.innerWidth - 110;
+      posX += speed * direction;
+
+      if (posX >= maxWidth) {
+        posX = maxWidth;
+        direction = -1;
+        walker.classList.add("flip");
+      } else if (posX <= 20) {
+        posX = 20;
+        direction = 1;
+        walker.classList.remove("flip");
+      }
+
+      walker.style.left = posX + "px";
+      requestAnimationFrame(animateWalker);
+    }
+    animateWalker();
+
+    /* 3. تأثير المطر على الشاشة */
+    const canvas = document.getElementById("rainCanvas");
+    const ctx = canvas.getContext("2d");
+    let drops = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    for (let i = 0; i < 160; i++) {
+      drops.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        len: 12 + Math.random() * 18,
+        speed: 6 + Math.random() * 7,
+        opacity: 0.2 + Math.random() * 0.45
+      });
+    }
+
+    function drawRain() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.lineWidth = 1.2;
+
+      for (const d of drops) {
+        ctx.strokeStyle = `rgba(203, 213, 225, ${d.opacity})`;
+        ctx.beginPath();
+        ctx.moveTo(d.x, d.y);
+        ctx.lineTo(d.x - 2.5, d.y + d.len);
+        ctx.stroke();
+
+        d.y += d.speed;
+        d.x -= 1.2;
+
+        if (d.y > canvas.height) {
+          d.y = -20;
+          d.x = Math.random() * (canvas.width + 50);
+        }
+      }
+      requestAnimationFrame(drawRain);
+    }
+    drawRain();
+
+    /* 4. موسيقى درامية حزينة مولدة برمجياً (بيانو خفيف + صوت مطر ناعم) */
+    let audioCtx = null;
+    let isPlaying = false;
+    let melodyTimer = null;
+    const musicBtn = document.getElementById("musicBtn");
+
+    // ترددات نغمات درامية حزينة (سلم لا الصغير A Minor)
+    const chords = [
+      [220.00, 261.63, 329.63], // Am
+      [174.61, 220.00, 261.63], // F
+      [130.81, 196.00, 261.63], // C
+      [164.81, 246.94, 329.63]  // Em
+    ];
+    let chordStep = 0;
+
+    function playPianoNote(freq, duration = 2.4) {
+      if (!audioCtx || !isPlaying) return;
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq, now);
+
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.06, now + 0.08);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start(now);
+      osc.stop(now + duration);
+    }
+
+    function startDramaticMusic() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+      }
+      isPlaying = true;
+      musicBtn.textContent = "إيقاف الموسيقى ⏸";
+      musicBtn.classList.add("active");
+
+      const playStep = () => {
+        if (!isPlaying) return;
+        const chord = chords[chordStep % chords.length];
+        playPianoNote(chord[0] / 2, 3.0); // نغمة باس عميقة
+        setTimeout(() => playPianoNote(chord[0], 2.2), 250);
+        setTimeout(() => playPianoNote(chord[1], 2.2), 650);
+        setTimeout(() => playPianoNote(chord[2], 2.4), 1050);
+        chordStep++;
+      };
+
+      playStep();
+      melodyTimer = setInterval(playStep, 2600);
+    }
+
+    function stopDramaticMusic() {
+      isPlaying = false;
+      clearInterval(melodyTimer);
+      musicBtn.textContent = "تشغيل الموسيقى الدرامية 🎵";
+      musicBtn.classList.remove("active");
+    }
+
+    function startMusicIfNeeded() {
+      if (!isPlaying) startDramaticMusic();
+    }
+
+    musicBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (isPlaying) {
+        stopDramaticMusic();
+      } else {
+        startDramaticMusic();
+      }
+    });
+  </script>
+</body>
+</html>
